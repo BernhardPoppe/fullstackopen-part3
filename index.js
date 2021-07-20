@@ -55,16 +55,16 @@ app.get('/api/persons/:id', (request, response) => {
 
 
 app.post('/api/persons', (request, response) => {
-	let data = request.body
-	if (!data.name) {
-		return response.status(400).json({ 
-	     	error: 'name is missing' 
-	    })
-	} else if (!data.number) {
-		return response.status(400).json({ 
-      		error: 'number missing' 
-    	})
-	}
+  let data = request.body
+  if (!data.name) {
+    return response.status(400).json({ 
+        error: 'name is missing' 
+      })
+  } else if (!data.number) {
+    return response.status(400).json({ 
+          error: 'number missing' 
+      })
+  }
 
   const person = new Person({
     name: data.name,
@@ -74,14 +74,6 @@ app.post('/api/persons', (request, response) => {
   person.save().then(savedPerson => {
     response.json(savedPerson)
   })
-})
-
-app.delete('/api/persons/:id', (request, response, next) => {
-  Person.findByIdAndRemove(request.params.id)
-    .then(result => {
-      response.status(204).end()
-    })
-    .catch(error => next(error))
 })
 
 
