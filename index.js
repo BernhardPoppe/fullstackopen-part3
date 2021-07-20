@@ -1,5 +1,7 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
+const Person = require('./models/person')
 
 const app = express()
 
@@ -35,57 +37,61 @@ let persons = [
 ]
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then(person => {
+    response.json(person)
+  })
 })
 
+
 app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const person = persons.find(person => person.id === id)
-  if(person) {
-	response.json(person)
-  } else {
-  	response.status(404).end()
-  }
+  Person.findById(request.params.id).then(person => {
+    response.json(person)
+  }).catch(error => {
+            return response.status(400).json({ 
+              error: 'no entry for the id' 
+            })
+        })
 })
+
 
 app.post('/api/persons', (request, response) => {
 	let data = request.body
-	if (!request.body.name) {
+	if (!data.name) {
 		return response.status(400).json({ 
 	     	error: 'name is missing' 
 	    })
-	} else if (!request.body.number) {
+	} else if (!data.number) {
 		return response.status(400).json({ 
       		error: 'number missing' 
     	})
 	}
 
-	if(persons.find(person => person.name === request.body.name)) {
-		return response.status(400).json({ 
-      		error: 'name must be unique' 
-    	})
-	}
+  const person = new Person({
+    name: data.name,
+    number: data.number,
+  })
 
- 	const new_id = Math.floor(Math.random() * 1000000000)
- 	data.id = new_id
- 	persons = persons.concat(data)
- 	response.json(persons)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
+})
+
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== id)
-  response.status(204).end()
-  console.log(persons)
-})
 
 app.get('/info', (request, response) => {
   let date = new Date()
   response.send(`<p>Phonebook has info for ${persons.length} people </p><p>${date}</p>`)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
